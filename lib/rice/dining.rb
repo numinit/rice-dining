@@ -3,6 +3,8 @@ require 'uri'
 require 'net/http'
 require 'nokogiri'
 
+require 'rice/dining/version'
+
 module Rice
   module Dining
     BASE = URI('http://dining.rice.edu').freeze
@@ -184,3 +186,4 @@ module Rice
     end
   end
 end
+
