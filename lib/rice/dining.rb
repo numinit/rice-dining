@@ -94,95 +94,114 @@ module Rice
       end
     end
 
-    ManifestCreateError ||= Class.new StandardError
+    class ManifestFetcher
+      def initialize
+        @allergen_map = {}
+        @allergen_shortcodes = Set.new
+      end
 
-    def self.manifest
-      # Make the request
-      req = Net::HTTP::Get.new Rice::Dining::BASE
-      req['User-Agent'.freeze] = Rice::Dining::IDENT
-      res = Net::HTTP.start(Rice::Dining::BASE.hostname, Rice::Dining::BASE.port,
-                            use_ssl: Rice::Dining::BASE.scheme == 'https'.freeze) {|h| h.request(req)}
+      def fetch
+        @allergen_map.clear
+        @allergen_shortcodes.clear
 
-      if res.is_a? Net::HTTPSuccess
-        doc = Nokogiri::HTML(res.body)
+        # Make the request
+        req = Net::HTTP::Get.new Rice::Dining::BASE
+        req['User-Agent'.freeze] = Rice::Dining::IDENT
+        res = Net::HTTP.start(Rice::Dining::BASE.hostname, Rice::Dining::BASE.port,
+                              use_ssl: Rice::Dining::BASE.scheme == 'https'.freeze) {|h| h.request(req)}
 
-        # stash allergen references
-        allergens, allergen_shortcodes = {}, Set.new
+        if res.is_a? Net::HTTPSuccess
+          doc = Nokogiri::HTML(res.body)
 
-        # build locations
-        locations = []
-        location_nodes = doc.css('div.item'.freeze)
-        raise ManifestCreateError, "couldn't find locations".freeze if location_nodes.empty?
-        location_nodes.each do |location_node|
-          # Get the servery name
-          name_nodes = location_node.css('div.servery-title h1'.freeze)
-          next if name_nodes.empty?
-          name = name_nodes.first.text
-          name.strip!
+          # stash allergen references in the "key" section
+          doc.css('div#key div.diet'.freeze).each do |allergen_node|
+            self.allergen_reference allergen_node['class'.freeze]
+          end
 
-          # might be closed
-          closed = !location_node.css('div.nothere'.freeze).empty?
-          if closed
-            locations << Rice::Dining::Location.new(name)
-          else
-            # grab the items
-            items = []
-            item_nodes = location_node.css('div.menu-item'.freeze)
-            item_nodes.each do |item_node|
-              item_allergens, item_name = [], item_node.text
-              item_name.strip!
-              item_node.parent.css('div.allergen div.diet'.freeze).each do |allergen_node|
-                # build the allergen key
-                key = Rice::Dining.allergen_cleanup allergen_node['class'.freeze]
-                if !allergens.include? key
-                  # find a unique value for the shortcode
-                  shortcode = key[0].to_sym
-                  if allergen_shortcodes.include? shortcode
-                    shortcode = shortcode.swapcase
+          # build each location
+          locations = []
+          location_nodes = doc.css('div.item'.freeze)
+          raise ManifestCreateError, "couldn't find locations".freeze if location_nodes.empty?
+          location_nodes.each do |location_node|
+            # get the servery name
+            name_nodes = location_node.css('div.servery-title h1'.freeze)
+            next if name_nodes.empty?
+            name = name_nodes.first.text
+            name.strip!
 
-                    while allergen_shortcodes.include? shortcode
-                      shortcode = shortcode.downcase.succ
-                    end
-                  end
-
-                  # create the allergen
-                  allergen = allergens[key] = Rice::Dining::Allergen.new(key, shortcode)
-                  allergen_shortcodes << shortcode
-                else
-                  allergen = allergens[key]
+            # might be closed
+            closed = !location_node.css('div.nothere'.freeze).empty?
+            if closed
+              locations << Rice::Dining::Location.new(name)
+            else
+              # grab the items
+              items = []
+              item_nodes = location_node.css('div.menu-item'.freeze)
+              item_nodes.each do |item_node|
+                item_allergens, item_name = [], item_node.text
+                item_name.strip!
+                item_node.parent.css('div.allergen div.diet'.freeze).each do |allergen_node|
+                  allergen = self.allergen_reference allergen_node['class'.freeze]
+                  item_allergens << allergen if allergen
                 end
 
-                item_allergens << allergen
+                items << Rice::Dining::Item.new(item_name, *item_allergens.sort)
               end
 
-              items << Rice::Dining::Item.new(item_name, *item_allergens.sort)
+              locations << Rice::Dining::Location.new(name, *items)
             end
-
-            locations << Rice::Dining::Location.new(name, *items)
           end
-        end
 
-        locations.sort! do |a, b|
-          if a.closed? and b.open?
-            1
-          elsif a.open? and b.closed?
-            -1
-          else
-            a.name <=> b.name
+          locations.sort! do |a, b|
+            if a.closed? and b.open?
+              1
+            elsif a.open? and b.closed?
+              -1
+            else
+              a.name <=> b.name
+            end
           end
-        end
 
-        Rice::Dining::Manifest.new locations, allergens.values
-      else
-        # Problem with the response
-        raise ManifestCreateError, "got HTTP #{res.code} from #{Rice::Dining::BASE}"
+          Rice::Dining::Manifest.new locations, @allergen_map.values
+        else
+          # Problem with the response
+          raise ManifestCreateError, "got HTTP #{res.code} from #{Rice::Dining::BASE}"
+        end
+      end
+
+      def allergen_reference allergen_class
+        # build the allergen key
+        key = allergen_cleanup allergen_class
+        return nil if key.nil?
+
+        if !@allergen_map.include? key
+          # find a unique value for the shortcode
+          shortcode = key[0].to_sym
+          if @allergen_shortcodes.include? shortcode
+            shortcode = shortcode.swapcase
+
+            while @allergen_shortcodes.include? shortcode
+              shortcode = shortcode.downcase.succ
+            end
+          end
+
+          # create the allergen
+          allergen = @allergen_map[key] = Rice::Dining::Allergen.new(key, shortcode)
+          @allergen_shortcodes << shortcode
+        else
+          allergen = @allergen_map[key]
+        end
+      end
+
+      def allergen_cleanup allergens
+        ret = allergens.match(/\Adiet\s+(?<type>[a-z]+)/i)
+        return nil if ret.nil?
+        ret[:type].downcase.to_sym
       end
     end
 
-    def self.allergen_cleanup allergens
-      ret = allergens.match(/\Adiet\s+(?<type>[a-z]+)/i)
-      return nil if ret.nil?
-      ret[:type].downcase.to_sym
+    def self.manifest
+      ManifestFetcher.new.fetch
     end
   end
 end

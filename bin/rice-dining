@@ -28,7 +28,7 @@ require 'colorize'
 begin
   regex = !ARGV.empty? ? Regexp.compile(ARGV.first, Regexp::IGNORECASE) : //
   manifest = Rice::Dining.manifest
-  allergens = manifest.allergens.sort {|a, b| a.id <=> b.id}
+  allergens = manifest.allergens.sort {|a, b| a.shortcode <=> b.shortcode}
   allergen_colors = {
     vegan: :magenta,
     vegetarian: :light_green,
@@ -47,7 +47,7 @@ begin
     next unless location.name =~ regex
     STDOUT.print "#{location.name}: "
     if location.open?
-      STDOUT.puts 'OPEN'.white.on_green
+      STDOUT.puts 'OPEN'.green
       location.items.each_with_index do |item, idx|
         STDOUT.print idx == 0 ? ' \- ' : ' |- '
         allergens.each do |allergen|
@@ -57,7 +57,7 @@ begin
         STDOUT.puts " #{item.name}"
       end
     else
-      STDOUT.puts 'CLOSED'.white.on_red
+      STDOUT.puts 'CLOSED'.red
     end
 
     printed += 1
@@ -69,9 +69,9 @@ begin
       max_width = allergen.id.length if allergen.id.length > max_width
     end
 
-    STDOUT.puts '-' * ((max_width + 3) * 5 + 12)
+    STDOUT.puts '-' * ((max_width + 3) * 5 + 8)
     allergens.each_with_index do |allergen, idx|
-      newline = (idx + 1) % 5 == 0
+      newline = idx == allergens.length - 1 || (idx + 1) % 5 == 0
       color = allergen_colors.include?(allergen.id) ? allergen_colors[allergen.id] : :white
       str = "#{allergen.shortcode.to_s.colorize(color)}: #{allergen.id}"
       str << ' ' * (max_width - allergen.id.length) unless newline
