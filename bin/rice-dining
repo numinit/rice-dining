@@ -43,6 +43,7 @@ begin
   }
   printed = 0
 
+  STDOUT.puts "#{manifest.title.white} (as of #{Time.now})"
   manifest.locations.each do |location|
     next unless location.name =~ regex
     STDOUT.print "#{location.name}: "

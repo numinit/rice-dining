@@ -10,9 +10,11 @@ module Rice
     BASE = URI('http://dining.rice.edu').freeze
 
     class Manifest
-      attr_reader :locations, :allergens
-      def initialize locations, allergens
-        raise ArgumentError unless locations.is_a? Enumerable and allergens.is_a? Enumerable
+      attr_reader :title, :locations, :allergens
+      def initialize title, locations, allergens
+        title = title ? title.dup.freeze : 'Dining'.freeze
+        raise ArgumentError unless title.is_a? String and locations.is_a? Enumerable and allergens.is_a? Enumerable
+        @title = title
         @locations, @allergens = [], Set.new
         locations.each do |location|
           raise ArgumentError unless location.is_a?(Rice::Dining::Location)
@@ -40,8 +42,8 @@ module Rice
           raise ArgumentError unless item.is_a?(Rice::Dining::Item)
           @items << item
         end
-
         @items.freeze
+
         self.freeze
       end
 
@@ -65,6 +67,7 @@ module Rice
           @allergens << allergen
         end
         @allergens.freeze
+
         self.freeze
       end
     end
@@ -112,6 +115,21 @@ module Rice
 
         if res.is_a? Net::HTTPSuccess
           doc = Nokogiri::HTML(res.body)
+
+          # find the title
+          title_nodes = doc.css('div.alpha h1:contains("Your")'.freeze)
+          unless title_nodes.empty?
+            title_stuff = title_nodes.first.text
+            title_stuff.strip!
+            title_match = title_stuff.match /\Ayour\s+(?<title>[a-z]+)/i
+            if title_match
+              title = title_match[:title]
+            else
+              title = nil
+            end
+          else
+            title = nil
+          end
 
           # stash allergen references in the "key" section
           doc.css('div#key div.diet'.freeze).each do |allergen_node|
@@ -162,7 +180,7 @@ module Rice
             end
           end
 
-          Rice::Dining::Manifest.new locations, @allergen_map.values
+          Rice::Dining::Manifest.new title, locations, @allergen_map.values
         else
           # Problem with the response
           raise CreateError, "got HTTP #{res.code} from #{Rice::Dining::BASE}"
