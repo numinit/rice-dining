@@ -8,5 +8,5 @@ Provides a `dining` executable that prints servery offerings at Rice.
 
 ## Invocation
 
-Run `dining` to print status for everything, or `dining <regex>` to print status
+Run `rice-dining` to print status for everything, or `rice-dining <regex>` to print status
 for locations matching `<regex>`
