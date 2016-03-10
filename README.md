@@ -10,3 +10,8 @@ Provides a `rice-dining` executable that prints servery offerings at Rice.
 
 Run `rice-dining` to print status for everything, or `rice-dining <regex>` to print status
 for locations matching `<regex>`
+
+## Screenshot
+
+![Screenshot](/png/screenshot.png?raw=true)
+
