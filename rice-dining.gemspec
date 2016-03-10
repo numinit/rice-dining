@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.license	      =  'MIT'
   s.files         =  `git ls-files`.split($\)
   s.require_paths = %w[lib]
+  s.executables   << 'rice-dining'
   s.has_rdoc      = true
   s.required_ruby_version = '>= 2.0'
   s.add_dependency 'nokogiri', '~> 1.6'
