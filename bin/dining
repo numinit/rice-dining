@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+
+=begin
+Copyright (c) 2016+ Morgan Jones
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+=end
+
+require 'rice/dining'
+require 'colorize'
+
+begin
+  regex = !ARGV.empty? ? Regexp.compile(ARGV.first, Regexp::IGNORECASE) : //
+  manifest = Rice::Dining.manifest
+  allergens = manifest.allergens.sort {|a, b| a.id <=> b.id}
+  allergen_colors = {
+    vegan: :magenta,
+    vegetarian: :light_green,
+    gluten: :yellow,
+    soy: :white,
+    milk: :light_red,
+    eggs: :light_yellow,
+    fish: :blue,
+    shellfish: :light_blue,
+    peanuts: :red,
+    treenuts: :light_black
+  }
+  printed = 0
+
+  manifest.locations.each do |location|
+    next unless location.name =~ regex
+    STDOUT.print "#{location.name}: "
+    if location.open?
+      STDOUT.puts 'OPEN'.white.on_green
+      location.items.each_with_index do |item, idx|
+        STDOUT.print idx == 0 ? ' \- ' : ' |- '
+        allergens.each do |allergen|
+          color = allergen_colors.include?(allergen.id) ? allergen_colors[allergen.id] : :white
+          STDOUT.print item.allergens.include?(allergen) ? allergen.shortcode.to_s.colorize(color) : '-'
+        end
+        STDOUT.puts " #{item.name}"
+      end
+    else
+      STDOUT.puts 'CLOSED'.white.on_red
+    end
+
+    printed += 1
+  end
+
+  if printed > 0
+    max_width = 0
+    allergens.each do |allergen|
+      max_width = allergen.id.length if allergen.id.length > max_width
+    end
+
+    STDOUT.puts '-' * ((max_width + 3) * 5 + 12)
+    allergens.each_with_index do |allergen, idx|
+      newline = (idx + 1) % 5 == 0
+      color = allergen_colors.include?(allergen.id) ? allergen_colors[allergen.id] : :white
+      str = "#{allergen.shortcode.to_s.colorize(color)}: #{allergen.id}"
+      str << ' ' * (max_width - allergen.id.length) unless newline
+      STDOUT.print str
+      if newline
+        STDOUT.puts
+      else
+        STDOUT.print ' | '
+      end
+    end
+  end
+
+  exit 0
+rescue => e
+  # Issue with something; catch it and exit with a meaningful error code
+  STDERR.puts "#$0: #{e.class}: #{e.message}"
+  STDERR.puts e.backtrace
+  exit 1
+end
+
