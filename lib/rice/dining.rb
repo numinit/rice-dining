@@ -115,13 +115,13 @@ module Rice
 
           # stash allergen references in the "key" section
           doc.css('div#key div.diet'.freeze).each do |allergen_node|
-            self.allergen_reference allergen_node['class'.freeze]
+            allergen_reference allergen_node['class'.freeze]
           end
 
           # build each location
           locations = []
           location_nodes = doc.css('div.item'.freeze)
-          raise ManifestCreateError, "couldn't find locations".freeze if location_nodes.empty?
+          raise CreateError, "couldn't find locations".freeze if location_nodes.empty?
           location_nodes.each do |location_node|
             # get the servery name
             name_nodes = location_node.css('div.servery-title h1'.freeze)
@@ -141,7 +141,7 @@ module Rice
                 item_allergens, item_name = [], item_node.text
                 item_name.strip!
                 item_node.parent.css('div.allergen div.diet'.freeze).each do |allergen_node|
-                  allergen = self.allergen_reference allergen_node['class'.freeze]
+                  allergen = allergen_reference allergen_node['class'.freeze]
                   item_allergens << allergen if allergen
                 end
 
@@ -165,9 +165,11 @@ module Rice
           Rice::Dining::Manifest.new locations, @allergen_map.values
         else
           # Problem with the response
-          raise ManifestCreateError, "got HTTP #{res.code} from #{Rice::Dining::BASE}"
+          raise CreateError, "got HTTP #{res.code} from #{Rice::Dining::BASE}"
         end
       end
+
+      private
 
       def allergen_reference allergen_class
         # build the allergen key
@@ -198,6 +200,8 @@ module Rice
         return nil if ret.nil?
         ret[:type].downcase.to_sym
       end
+
+      CreateError ||= Class.new StandardError
     end
 
     def self.manifest
