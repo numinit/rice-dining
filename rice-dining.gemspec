@@ -14,6 +14,6 @@ Gem::Specification.new do |s|
   s.require_paths = %w[lib]
   s.has_rdoc      = true
   s.required_ruby_version = '>= 2.0'
-  s.add_dependency 'nokogiri', '~> 1.6.0'
-  s.add_runtime_dependency 'colorize', '~> 0.7.0'
+  s.add_dependency 'nokogiri', '~> 1.6'
+  s.add_runtime_dependency 'colorize', '~> 0.7'
 end

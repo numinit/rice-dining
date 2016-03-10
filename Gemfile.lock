@@ -2,8 +2,8 @@ PATH
   remote: .
   specs:
     rice-dining (0.1)
-      colorize (~> 0.7.0)
-      nokogiri (~> 1.6.0)
+      colorize (>= 0.7.0)
+      nokogiri (>= 1.6.0)
 
 GEM
   remote: https://rubygems.org/
