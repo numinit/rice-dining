@@ -1,6 +1,6 @@
 # rice-dining
 
-Provides a `dining` executable that prints servery offerings at Rice.
+Provides a `rice-dining` executable that prints servery offerings at Rice.
 
 ## Installation
 
