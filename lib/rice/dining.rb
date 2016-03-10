@@ -111,25 +111,25 @@ module Rice
         locations = []
         location_nodes = doc.css('div.item'.freeze)
         raise ManifestCreateError, "couldn't find locations".freeze if location_nodes.empty?
-        location_nodes.each do |location|
+        location_nodes.each do |location_node|
           # Get the servery name
-          name = location.css('div.servery-title h1'.freeze)
-          next if name.empty?
-          name = name.first.text
+          name_nodes = location_node.css('div.servery-title h1'.freeze)
+          next if name_nodes.empty?
+          name = name_nodes.first.text
           name.strip!
 
           # might be closed
-          closed = !location.css('div.nothere'.freeze).empty?
+          closed = !location_node.css('div.nothere'.freeze).empty?
           if closed
             locations << Rice::Dining::Location.new(name)
           else
             # grab the items
             items = []
-            item_nodes = location.css('div.menu-item'.freeze)
-            item_nodes.each do |item|
-              item_allergens, item_name = [], item.text
+            item_nodes = location_node.css('div.menu-item'.freeze)
+            item_nodes.each do |item_node|
+              item_allergens, item_name = [], item_node.text
               item_name.strip!
-              item.parent.css('div.allergen div.diet'.freeze).each do |allergen_node|
+              item_node.parent.css('div.allergen div.diet'.freeze).each do |allergen_node|
                 # build the allergen key
                 key = Rice::Dining.allergen_cleanup allergen_node['class'.freeze]
                 if !allergens.include? key
