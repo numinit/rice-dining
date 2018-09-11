@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rice-dining (0.2.4)
+    rice-dining (0.2.5)
       colorize (~> 0.8)
       nokogiri (~> 1.8)
 
