@@ -21,7 +21,7 @@ require 'csv'
 manifest = Rice::Dining.manifest
 
 CSV.open('dining.csv', 'w') do |csv|
-  mf.locations.each do |loc|
+  manifest.locations.each do |loc|
     loc.items.each do |item|
       csv << [loc.name, loc.open?, item.name, item.allergens.map(&:id).join(' ')]
     end
