@@ -42,7 +42,7 @@ Baker,true,Pinto bean soup with pico de gallo,soy vegan
 ```
 
 Note that this query was performed at like 4AM Houston time and all the
-locations were "open" according to dining.rice.edu ¯\_(ツ)_/¯
+locations were "open" according to dining.rice.edu `¯\_(ツ)_/¯`
 
 ## Invocation
 
