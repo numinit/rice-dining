@@ -27,6 +27,7 @@ require 'colorize'
 
 begin
   regex = !ARGV.empty? ? Regexp.compile(ARGV.first, Regexp::IGNORECASE) : //
+  unicode = !ENV['RICE_DINING_NO_UNICODE']
   manifest = Rice::Dining.manifest
   allergens = manifest.allergens.sort {|a, b| a.shortcode <=> b.shortcode}
   allergen_colors = {
@@ -50,7 +51,7 @@ begin
     if location.open?
       STDOUT.puts 'OPEN'.green
       location.items.each_with_index do |item, idx|
-        STDOUT.print idx == 0 ? ' \- ' : ' |- '
+        STDOUT.print unicode ? " \u2192 " : (idx == 0 ? ' \- ' : ' |- ')
         allergens.each do |allergen|
           color = allergen_colors.include?(allergen.id) ? allergen_colors[allergen.id] : :white
           STDOUT.print item.allergens.include?(allergen) ? allergen.shortcode.to_s.colorize(color) : '-'

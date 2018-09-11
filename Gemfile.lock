@@ -1,18 +1,18 @@
 PATH
   remote: .
   specs:
-    rice-dining (0.2.2)
+    rice-dining (0.2.3)
       colorize (~> 0.7)
       nokogiri (~> 1.6)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    colorize (0.7.7)
-    mini_portile2 (2.0.0)
-    nokogiri (1.6.7.2)
-      mini_portile2 (~> 2.0.0.rc2)
-    rake (11.0.1)
+    colorize (0.8.1)
+    mini_portile2 (2.3.0)
+    nokogiri (1.8.4)
+      mini_portile2 (~> 2.3.0)
+    rake (12.3.1)
 
 PLATFORMS
   ruby
@@ -20,3 +20,6 @@ PLATFORMS
 DEPENDENCIES
   rake
   rice-dining!
+
+BUNDLED WITH
+   1.16.1
